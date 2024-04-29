@@ -1,6 +1,6 @@
-#include "expect.h"
+#include "assert.h"
 
 void test()
 {
-    Expect::expect(true);
+    assert(!"test() message 1");
 }

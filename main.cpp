@@ -1,8 +1,9 @@
 
 
 #include <iostream>
-#define EXPECT_MAIN
-#include "expect.h"
+
+#define ASSERT_MAIN
+#include "assert.h"
 
 using namespace std;
 void test();
@@ -10,8 +11,15 @@ void test();
 int main()
 {
     cout << "Hello world!" << endl;
-    Expect::expectConfig = Expect::ExpectBoth;
+
+    assertBehavior = AssertBehavior::None;
+    assertLogFile = "assert_logs/assert.log";
+
     test();
-    Expect::expect(3 * 4 + 1 == 7 * 2);
+
+    assert(!"This is a test");
+    assert(!"This is a test");
+    assert(!"main() message 1");
+
     return 0;
 }
