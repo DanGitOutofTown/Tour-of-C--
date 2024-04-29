@@ -1,11 +1,10 @@
-
-
 #include <iostream>
 
 #define ASSERT_MAIN
 #include "assert.h"
 
 using namespace std;
+
 void test();
 
 int main()
