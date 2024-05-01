@@ -1,2 +1,2 @@
 *.exe
-assert_logs
+error_logs
