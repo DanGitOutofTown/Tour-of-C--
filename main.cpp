@@ -1,7 +1,7 @@
 #include <iostream>
 
-#define ASSERT_MAIN
 #include "assert.h"
+#include "LogError.h"
 
 using namespace std;
 
@@ -11,8 +11,11 @@ int main()
 {
     cout << "Hello world!" << endl;
 
-    assertBehavior = AssertBehavior::None;
-    assertLogFile = "assert_logs/assert.log";
+#ifdef USE_RELEASEBUILD_ASSERT
+    assertBehavior = AssertBehavior::Popup;
+#endif
+
+    errorLogFile = "assert_logs/assert.log";
 
     test();
 
