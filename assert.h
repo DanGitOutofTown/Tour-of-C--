@@ -1,5 +1,7 @@
 #pragma once
+
 #include <filesystem>
+#include <source_location>
 
 enum class AssertBehavior
 {
@@ -10,10 +12,10 @@ enum class AssertBehavior
     Terminate
 };
 
-#define USE_RELEASEBUILD_ASSERT // To be passed to compiler
+#define USE_F15_ASSERT // To be passed to compiler
 #define NDEBUG
 
-#if !defined(NDEBUG) || !defined(USE_RELEASEBUILD_ASSERT)
+#if !defined(NDEBUG) || !defined(USE_F15_ASSERT)
 
 #define _LIBCPP_UCRT_INCLUDE(x) <../include/x> // Custom path for Visual Studio includes
 
@@ -29,6 +31,6 @@ extern bool logAsserts;
 #define assert(_Expression) (void)((static_cast<bool>(_Expression)) || \
                                    (_f15assert(__CRT_STRINGIZE(#_Expression), std::source_location::current()), 0))
 
-void _f15assert(const char *_Message, const std::source_location &loc);
+void _f15assert(const char *_Message, const std::source_location&);
 
 #endif // !defined(NDEBUG) || !defined(USE_RELEASEBUILD_ASSERT)

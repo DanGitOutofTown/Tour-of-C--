@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <source_location>
 #include <thread>
 #include <exception>
 
@@ -12,11 +11,11 @@
 AssertBehavior assertBehavior = AssertBehavior::None;
 bool logAsserts = true;
 
-void _f15assert(const char *_Message, const std::source_location &loc)
+void _f15assert(const char *_Message, const std::source_location& loc)
 {
     if (logAsserts)
     {
-        LogError(_Message, loc);
+        LogError("Assert: " + std::string(_Message), loc);
     }
 
     if (assertBehavior == AssertBehavior::None)

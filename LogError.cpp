@@ -30,7 +30,7 @@ bool MsgLogged(const std::string &msg)
     return false;
 }
 
-void LogError(const std::string &errMsg, const std::source_location& loc)
+void LogError(const std::string& errMsg, const std::source_location& loc)
 {
     const std::string locStr = std::string(loc.file_name()) + ":|" + std::to_string(loc.line()) +
                                "| " + loc.function_name();
