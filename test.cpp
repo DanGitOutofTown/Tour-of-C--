@@ -5,5 +5,5 @@ void test()
 {
     assert(!"test() message 1");
 
-    LogError("My error message!");
+    ErrorLogger::LogError("My error message!");
 }

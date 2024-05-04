@@ -17,7 +17,7 @@ void f15assert(const char *_Message, const std::source_location& loc)
 {
     if (logAsserts)
     {
-        LogError("Assert: " + std::string(_Message), loc);
+        ErrorLogger::LogError("Assert: " + std::string(_Message), loc);
     }
 
     if (behavior == Behavior::None)

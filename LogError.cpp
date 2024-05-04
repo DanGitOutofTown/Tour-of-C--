@@ -7,8 +7,10 @@
 
 #include "LogError.h"
 
+namespace ErrorLogger
+{
 bool logErrors = true;
-std::filesystem::path errorLogFile = "error_logs/error.log";
+std::filesystem::path errFile = "error_logs/errors.log";
 
 // Maximum number of unique assert message that can be logged
 constexpr int maxErrorMsgs{5};
@@ -33,18 +35,21 @@ inline bool MsgLogged(std::string_view msg)
 
 void LogError(std::string_view errMsg, const std::source_location loc)
 {
+    if (!logErrors)
+        return;
+
     const std::lock_guard<std::mutex> lock(errorLogLock);
 
     const std::string& locStr = std::string(loc.file_name()) + ":|" + std::to_string(loc.line()) +
                                             "| " + loc.function_name();
 
-    std::ofstream logFile;
+    std::ofstream ofs;
 
     if (numErrorMsgs < maxErrorMsgs && !MsgLogged(locStr))
     {
         if (errorLogFirstpass)
         {
-            if (std::filesystem::exists(errorLogFile))
+            if (std::filesystem::exists(errFile))
             {
                 std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
@@ -53,39 +58,39 @@ void LogError(std::string_view errMsg, const std::source_location loc)
 
                 std::strftime(dateTimeBuf, sizeof(dateTimeBuf), "_%y-%m-%d_%H-%M-%S", std::localtime(&now));
 
-                std::filesystem::path parent = errorLogFile.parent_path().string();
+                std::filesystem::path parent = errFile.parent_path().string();
                 if (!parent.empty())
                 {
                     parent += "/";
                 }
-                std::filesystem::path dest = parent.string() + errorLogFile.stem().string() +
-                                             dateTimeBuf + errorLogFile.extension().string();
+                std::filesystem::path dest = parent.string() + errFile.stem().string() +
+                                             dateTimeBuf + errFile.extension().string();
 
-                std::filesystem::rename(errorLogFile, dest);
+                std::filesystem::rename(errFile, dest);
             }
-            else if (!std::filesystem::exists(errorLogFile.parent_path()) &&
-                     !std::filesystem::create_directories(errorLogFile.parent_path()))
+            else if (!std::filesystem::exists(errFile.parent_path()) &&
+                     !std::filesystem::create_directories(errFile.parent_path()))
             {
                 throw std::runtime_error(locStr + ": " + "Can't create directory " +
-                                         errorLogFile.parent_path().string());
+                                         errFile.parent_path().string());
             }
 
-            logFile.open(errorLogFile);
+            ofs.open(errFile);
             errorLogFirstpass = false;
         }
         else
         {
-            logFile.open(errorLogFile, std::ios::app);
+            ofs.open(errFile, std::ios::app);
         }
 
-        if (logFile)
+        if (ofs)
         {
-            logFile << locStr << ": " << errMsg << std::endl;
-            logFile.close();
+            ofs << locStr << ": " << errMsg << std::endl;
+            ofs.close();
         }
         else
         {
-            throw std::runtime_error(locStr + ": " + "Can't open " + errorLogFile.string() + " for write");
+            throw std::runtime_error(locStr + ": " + "Can't open " + errFile.string() + " for write");
         }
 
         errorMsgLog[numErrorMsgs] = locStr;
@@ -93,20 +98,21 @@ void LogError(std::string_view errMsg, const std::source_location loc)
     }
     else if (numErrorMsgs == maxErrorMsgs)
     {
-        logFile.open(errorLogFile, std::ios::app);
+        ofs.open(errFile, std::ios::app);
 
         std::string msg = "Max messages of " + std::to_string(maxErrorMsgs) + " exceeded, logging stopped";
 
-        if (logFile)
+        if (ofs)
         {
-            logFile << msg << std::endl;
-            logFile.close();
+            ofs << msg << std::endl;
+            ofs.close();
         }
         else
         {
-            throw std::runtime_error(locStr + ": " + "Can't open " + errorLogFile.string() + " for append");
+            throw std::runtime_error(locStr + ": " + "Can't open " + errFile.string() + " for append");
         }
 
         logErrors = false;
     }
+}
 }
