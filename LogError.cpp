@@ -1,4 +1,5 @@
 #include <fstream>
+#include <string>
 #include <array>
 #include <mutex>
 #include <chrono>
@@ -17,9 +18,9 @@ int numErrorMsgs{0};
 std::mutex errorLogLock;
 bool errorLogFirstpass{true};
 
-bool MsgLogged(const std::string &msg)
+inline bool MsgLogged(std::string_view msg)
 {
-    for (auto m : errorMsgLog)
+    for (const auto& m : errorMsgLog)
     {
         if (m == msg)
         {
@@ -30,12 +31,12 @@ bool MsgLogged(const std::string &msg)
     return false;
 }
 
-void LogError(const std::string& errMsg, const std::source_location& loc)
+void LogError(std::string_view errMsg, const std::source_location& loc)
 {
-    const std::string locStr = std::string(loc.file_name()) + ":|" + std::to_string(loc.line()) +
-                               "| " + loc.function_name();
-
     const std::lock_guard<std::mutex> lock(errorLogLock);
+
+    const std::string& locStr = std::string(loc.file_name()) + ":|" + std::to_string(loc.line()) +
+                                            "| " + loc.function_name();
 
     std::ofstream logFile;
 
