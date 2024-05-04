@@ -8,38 +8,40 @@
 #include "assert.h"
 #include "LogError.h"
 
-AssertBehavior assertBehavior = AssertBehavior::None;
+namespace F15Assert
+{
+Behavior behavior = Behavior::None;
 bool logAsserts = true;
 
-void _f15assert(const char *_Message, const std::source_location& loc)
+void f15assert(const char *_Message, const std::source_location& loc)
 {
     if (logAsserts)
     {
         LogError("Assert: " + std::string(_Message), loc);
     }
 
-    if (assertBehavior == AssertBehavior::None)
+    if (behavior == Behavior::None)
     {
         return;
     }
 
-    if (assertBehavior == AssertBehavior::Popup)
+    if (behavior == Behavior::Popup)
     {
         MessageBoxA(NULL, _Message, "Assertion failed", MB_ICONERROR);
         return;
     }
 
-    if (assertBehavior == AssertBehavior::Throw)
+    if (behavior == Behavior::Throw)
     {
         throw std::runtime_error(_Message);
     }
 
-    if (assertBehavior == AssertBehavior::Terminate)
+    if (behavior == Behavior::Terminate)
     {
         std::terminate();
     }
 
-    if (assertBehavior == AssertBehavior::Hang)
+    if (behavior == Behavior::Hang)
     {
         for (;;)
         {
@@ -47,4 +49,5 @@ void _f15assert(const char *_Message, const std::source_location& loc)
             std::this_thread::yield();
         }
     }
+}
 }

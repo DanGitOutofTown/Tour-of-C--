@@ -31,7 +31,7 @@ inline bool MsgLogged(std::string_view msg)
     return false;
 }
 
-void LogError(std::string_view errMsg, const std::source_location& loc)
+void LogError(std::string_view errMsg, const std::source_location loc)
 {
     const std::lock_guard<std::mutex> lock(errorLogLock);
 

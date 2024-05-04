@@ -12,8 +12,8 @@ int main()
     cout << "Hello world!" << endl;
 
 #if defined(NDEBUG) && defined(USE_F15_ASSERT)
-    assertBehavior = AssertBehavior::Popup;
-    logAsserts = true;
+    F15Assert::behavior = F15Assert::Behavior::Popup;
+    F15Assert::logAsserts = true;
 #endif
 
     errorLogFile = "error_logs/main.log";

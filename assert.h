@@ -3,7 +3,9 @@
 #include <filesystem>
 #include <source_location>
 
-enum class AssertBehavior
+namespace F15Assert
+{
+enum class Behavior
 {
     None,
     Hang,
@@ -11,6 +13,7 @@ enum class AssertBehavior
     Throw,
     Terminate
 };
+}
 
 #define USE_F15_ASSERT // To be passed to compiler
 #define NDEBUG
@@ -25,12 +28,15 @@ enum class AssertBehavior
 
 #include <source_location>
 
-extern AssertBehavior assertBehavior;
+#define assert(_Expression) (void)((static_cast<bool>(_Expression)) || \
+                                   (F15Assert::f15assert(__CRT_STRINGIZE(#_Expression), std::source_location::current()), 0))
+
+namespace F15Assert
+{
+extern Behavior behavior;
 extern bool logAsserts;
 
-#define assert(_Expression) (void)((static_cast<bool>(_Expression)) || \
-                                   (_f15assert(__CRT_STRINGIZE(#_Expression), std::source_location::current()), 0))
-
-void _f15assert(const char *_Message, const std::source_location&);
+void f15assert(const char *_Message, const std::source_location&);
+}
 
 #endif // !defined(NDEBUG) || !defined(USE_RELEASEBUILD_ASSERT)
