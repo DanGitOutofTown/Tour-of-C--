@@ -1,6 +1,6 @@
 #include <iostream>
+#include <cassert>
 
-#include "assert.h"
 #include "LogError.h"
 
 using namespace std;
