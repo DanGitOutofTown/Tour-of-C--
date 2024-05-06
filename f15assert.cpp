@@ -1,3 +1,5 @@
+#if defined(NDEBUG) && defined(F15ASSERT)
+
 #include <iostream>
 #include <string>
 #include <thread>
@@ -10,6 +12,7 @@
 
 namespace F15Assert
 {
+
 Behavior behavior = Behavior::None;
 bool logAsserts = true;
 
@@ -50,4 +53,7 @@ void f15assert(const char *_Message, const std::source_location& loc)
         }
     }
 }
+
 }
+
+#endif

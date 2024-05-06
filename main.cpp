@@ -1,6 +1,6 @@
 #include <iostream>
-#include "assert.h"
 
+#include "assert.h"
 #include "LogError.h"
 
 using namespace std;
@@ -9,9 +9,8 @@ void test();
 
 int main()
 {
-    cout << "Hello world!" << endl;
 
-#if defined(NDEBUG) && defined(USE_F15_ASSERT)
+#if defined(NDEBUG) && defined(F15ASSERT)
     F15Assert::behavior = F15Assert::Behavior::Popup;
 #endif
 
@@ -22,6 +21,8 @@ int main()
     ErrorLogger::LogError("An error message");
 
     test();
+
+    cout << "Hello world!" << endl;
 
     return 0;
 }

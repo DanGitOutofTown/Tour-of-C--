@@ -9,7 +9,10 @@
                 "-g",
                 "${fileDirname}\\*.cpp",
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "-DF15ASSERT",
+                "-DNDEBUG",
+                "--include-directory=D:/git/Tour-of-C++/include"
             ],
             "options": {
                 "cwd": "${fileDirname}"
