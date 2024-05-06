@@ -7,17 +7,24 @@ using namespace std;
 
 void test();
 
+bool desktop = true;
+
 int main()
 {
 
 #if defined(NDEBUG) && defined(F15ASSERT)
-    F15Assert::behavior = F15Assert::Behavior::Popup;
+    if (desktop)
+    {
+        F15Assert::enableBehavior = true;
+        F15Assert::behavior = F15Assert::Behavior::Popup;
+        ErrorLogger::logErrors = false;
+    }
 #endif
 
     ErrorLogger::errFile = "error_logs/main.log";
 
     assert(!"main() message 1");
-    
+
     ErrorLogger::LogError("An error message");
 
     test();

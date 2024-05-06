@@ -14,6 +14,7 @@ namespace F15Assert
 {
 
 Behavior behavior = Behavior::None;
+bool enableBehavior = false;
 bool logAsserts = true;
 
 void f15assert(const char *_Message, const std::source_location& loc)
@@ -23,7 +24,7 @@ void f15assert(const char *_Message, const std::source_location& loc)
         ErrorLogger::LogError("Assert: " + std::string(_Message), loc);
     }
 
-    if (behavior == Behavior::None)
+    if (!enableBehavior || behavior == Behavior::None)
     {
         return;
     }

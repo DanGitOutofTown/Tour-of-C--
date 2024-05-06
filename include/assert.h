@@ -15,6 +15,7 @@ namespace F15Assert
 enum class Behavior {None, Hang, Popup, Throw, Terminate};
 
 extern Behavior behavior;
+extern bool enableBehavior;
 extern bool logAsserts;
 
 void f15assert(const char *_Message, const std::source_location &);
