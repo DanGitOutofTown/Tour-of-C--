@@ -13,8 +13,8 @@ namespace ErrorLogger
 bool logErrors = true;
 std::filesystem::path errFile = "error_logs/error.log";
 
-// Maximum number of unique assert message that can be logged
-constexpr int maxErrorMsgs{5};
+// Maximum number of unique assert messages that can be logged
+constexpr int maxErrorMsgs{10};
 
 std::array<std::string, maxErrorMsgs> errorMsgLog;
 int numErrorMsgs{0};

@@ -15,8 +15,10 @@ int main()
 #if defined(NDEBUG) && defined(F15ASSERT)
     if (desktop)
     {
+        // Override f15assert.ini settings
         F15Assert::enableBehavior = true;
         F15Assert::behavior = F15Assert::Behavior::Popup;
+        
         ErrorLogger::logErrors = false;
     }
 #endif

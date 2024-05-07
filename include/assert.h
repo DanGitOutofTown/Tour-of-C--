@@ -4,9 +4,8 @@
 
 #include <source_location>
 
-#define assert(_Expression) (void)((static_cast<bool>(_Expression)) ||                     \
-                                   (F15Assert::f15assert(__CRT_STRINGIZE(#_Expression),    \
-                                                         std::source_location::current()), \
+#define assert(expression) (void)((static_cast<bool>(expression)) || \
+                                   (F15Assert::f15assert(#expression, std::source_location::current()), \
                                     0))
 
 namespace F15Assert
@@ -18,7 +17,7 @@ extern Behavior behavior;
 extern bool enableBehavior;
 extern bool logAsserts;
 
-void f15assert(const char *_Message, const std::source_location &);
+void f15assert(const char *expression, const std::source_location &);
 
 }
 

@@ -13,15 +13,31 @@
 namespace F15Assert
 {
 
-Behavior behavior = Behavior::None;
-bool enableBehavior = false;
-bool logAsserts = true;
+// To be controlled via f15assert.ini w/ installer selection
+bool enableBehavior = false; // default
 
-void f15assert(const char *_Message, const std::source_location& loc)
+// May also be controlled via f15assert.ini w/ installer selection
+Behavior behavior = Behavior::Popup; // default
+
+bool logAsserts = true; // default
+bool firstPass = true;
+
+void ParseConfig()
 {
+    // parse f15assert.ini
+}
+
+void f15assert(const char *expression, const std::source_location& loc)
+{
+    if (firstPass)
+    {
+        ParseConfig();
+        firstPass = false;
+    }
+
     if (logAsserts)
     {
-        ErrorLogger::LogError("Assert: " + std::string(_Message), loc);
+        ErrorLogger::LogError("Assert: " + std::string(expression), loc);
     }
 
     if (!enableBehavior || behavior == Behavior::None)
@@ -31,13 +47,13 @@ void f15assert(const char *_Message, const std::source_location& loc)
 
     if (behavior == Behavior::Popup)
     {
-        MessageBoxA(NULL, _Message, "Assertion failed", MB_ICONERROR);
+        MessageBoxA(NULL, expression, "Assertion failed", MB_ICONERROR);
         return;
     }
 
     if (behavior == Behavior::Throw)
     {
-        throw std::runtime_error(_Message);
+        throw std::runtime_error(expression);
     }
 
     if (behavior == Behavior::Terminate)
