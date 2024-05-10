@@ -7,23 +7,15 @@ using namespace std;
 
 void test();
 
-bool desktop = true;
-
 int main()
 {
 
 #if defined(NDEBUG) && defined(F15ASSERT)
-    if (desktop)
-    {
-        // Override f15assert.ini settings
-        F15Assert::enableBehavior = true;
-        F15Assert::behavior = F15Assert::Behavior::Popup;
-        
-        ErrorLogger::logErrors = false;
-    }
+    F15Assert::ParseConfig("f15assert.ini");
 #endif
 
-    ErrorLogger::errFile = "error_logs/main.log";
+    ErrorLogger::SetLoggingState(ErrorLogger::LoggingState::Enabled);
+    ErrorLogger::SetErrorFile("error_logs/main.log");
 
     assert(!"main() message 1");
 
