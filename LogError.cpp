@@ -13,7 +13,7 @@ namespace ErrorLogger
     {
         LoggingState loggingState = LoggingState::Disabled;
 
-        std::filesystem::path errFile = "error_logs/error.log";
+        std::filesystem::path errFile;
 
         // Maximum number of unique assert messages that can be logged
         constexpr int maxMsgs{10};
@@ -49,7 +49,7 @@ namespace ErrorLogger
 
     void LogError(std::string_view errMsg, const std::source_location loc)
     {
-        if (loggingState == LoggingState::Disabled)
+        if (errFile.empty() || loggingState == LoggingState::Disabled)
             return;
 
         const std::lock_guard<std::mutex> lock(logLock);

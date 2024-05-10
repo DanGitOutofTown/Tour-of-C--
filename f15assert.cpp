@@ -15,8 +15,8 @@ namespace F15Assert
     namespace
     {
         // To be contained in f15assert.ini
-        bool logAsserts = true;
-        bool enableBehavior = true;
+        bool logAsserts = true; // temporarily true until ParseConfig implemented
+        bool enableBehavior = true; // temporarily true until ParseConfig implemented
         Behavior behavior = Behavior::Popup;
     }
 
