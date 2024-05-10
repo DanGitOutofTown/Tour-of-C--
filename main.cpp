@@ -14,8 +14,7 @@ int main()
     F15Assert::ParseConfig("f15assert.ini");
 #endif
 
-    ErrorLogger::SetLoggingState(ErrorLogger::LoggingState::Enabled);
-    ErrorLogger::SetErrorFile("error_logs/main.log");
+    ErrorLogger::Init("error_logs/main.log");
 
     assert(!"main() message 1");
 

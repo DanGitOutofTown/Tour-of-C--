@@ -26,8 +26,9 @@ namespace F15Assert
 
 #else
 
-#define _LIBCPP_UCRT_INCLUDE(x) <C : / msys64 / ucrt64 / include / x> // Custom path for Visual Studio includes
-
-#include _LIBCPP_UCRT_INCLUDE(assert.h)
+// Use system assert.h (safety net)
+// Should not get here if this assert.h is only in the additional include directories
+// when building ReleaseWithDebug
+#include <C:/msys64/ucrt64/include/assert.h>
 
 #endif

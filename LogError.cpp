@@ -11,8 +11,6 @@ namespace ErrorLogger
 {
     namespace
     {
-        LoggingState loggingState = LoggingState::Disabled;
-
         std::filesystem::path errFile;
 
         // Maximum number of unique assert messages that can be logged
@@ -37,19 +35,14 @@ namespace ErrorLogger
         return false;
     }
 
-    void SetLoggingState(LoggingState state)
-    {
-        loggingState = state;
-    }
-
-    void SetErrorFile(std::filesystem::path file)
+    void Init(std::filesystem::path file)
     {
         errFile = file;
     }
 
     void LogError(std::string_view errMsg, const std::source_location loc)
     {
-        if (errFile.empty() || loggingState == LoggingState::Disabled)
+        if (errFile.empty())
             return;
 
         const std::lock_guard<std::mutex> lock(logLock);
@@ -126,7 +119,7 @@ namespace ErrorLogger
                 throw std::runtime_error(locStr + ": " + "Can't open " + errFile.string() + " for append");
             }
 
-            loggingState = LoggingState::Disabled;
+            numMsgs++; // no more logging
         }
     }
 }
