@@ -11,7 +11,7 @@
                 "UNICODE",
                 "_UNICODE",
                 "NDEBUG",
-                "F15ASSERT"
+                "RELEASE_ASSERT"
             ],
             "compilerPath": "C:\\msys64\\ucrt64\\bin\\gcc.exe",
             "cStandard": "c17",

@@ -1,15 +1,15 @@
 #pragma once
 
-#if defined(NDEBUG) && defined(F15ASSERT)
+#if defined(NDEBUG) && defined(RELEASE_ASSERT)
 
 #include <filesystem>
 #include <source_location>
 
 #define assert(expression) (void)((static_cast<bool>(expression)) ||                                   \
-                                  (F15Assert::f15assert(#expression, std::source_location::current()), \
+                                  (ReleaseAssert::release_assert(#expression, std::source_location::current()), \
                                    0))
 
-namespace F15Assert
+namespace ReleaseAssert
 {
     enum class Behavior
     {
@@ -21,7 +21,7 @@ namespace F15Assert
     };
 
     void ParseConfig(std::filesystem::path iniFile);
-    void f15assert(const char *expression, const std::source_location &);
+    void release_assert(const char *expression, const std::source_location &);
 }
 
 #else

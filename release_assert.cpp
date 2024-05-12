@@ -1,4 +1,4 @@
-#if defined(NDEBUG) && defined(F15ASSERT)
+#if defined(NDEBUG) && defined(RELEASE_ASSERT)
 
 #include <iostream>
 #include <string>
@@ -10,7 +10,7 @@
 #include "assert.h"
 #include "LogError.h"
 
-namespace F15Assert
+namespace ReleaseAssert
 {
     namespace
     {
@@ -28,7 +28,7 @@ namespace F15Assert
         ;
     }
 
-    void f15assert(const char *expression, const std::source_location& loc)
+    void release_assert(const char *expression, const std::source_location& loc)
     {
         if (logAsserts)
         {

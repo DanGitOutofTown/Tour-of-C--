@@ -10,8 +10,8 @@ void test();
 int main()
 {
 
-#if defined(NDEBUG) && defined(F15ASSERT)
-    F15Assert::ParseConfig("f15assert.ini");
+#if defined(NDEBUG) && defined(RELEASE_ASSERT)
+    ReleaseAssert::ParseConfig("release_assert.ini");
 #endif
 
     ErrorLogger::Init("error_logs/main.log");
