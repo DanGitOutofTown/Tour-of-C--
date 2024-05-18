@@ -14,7 +14,7 @@ int main()
     ReleaseAssert::ParseConfig("release_assert.ini");
 #endif
 
-    ErrorLogger::Init("error_logs/main.log");
+    ErrorLogger::Init("error_logs/main.log", "AVI", "error_logger.ini");
 
     assert(!"main() message 1");
 

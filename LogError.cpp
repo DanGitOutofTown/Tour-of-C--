@@ -1,9 +1,11 @@
 #include <fstream>
-#include <string>
+#include <sstream>
 #include <array>
 #include <mutex>
 #include <chrono>
 #include <ctime>
+
+#include "windows.h"
 
 #include "LogError.h"
 
@@ -19,7 +21,38 @@ namespace ErrorLogger
         std::array<std::string, maxMsgs> msgLog;
         int numMsgs{0};
         std::mutex logLock;
-        bool firstpass{true};
+        bool firstPass{true};
+
+        // Set default configuration
+        // To be overridden only through ParseConfig()
+        std::string srvrSktName;
+        int srvrPort{0};
+        int clientPort{0};
+
+        int srvrSkt{0};
+
+        enum class PopupBehavior
+        {
+            Local,
+            Remote,
+            Off,
+        };
+
+        PopupBehavior behavior = PopupBehavior::Local;
+
+        std::string clientSktName;
+        struct SrvrMsg
+        {
+            char caption[64];
+            char clientSktName[64];
+            char errBuf[256];
+        } srvrMsg;
+
+        void ParseConfig(std::filesystem::path iniFile)
+        {
+            // override defaults above
+            ;
+        }
     }
 
     inline bool MsgLogged(std::string_view msg)
@@ -35,26 +68,50 @@ namespace ErrorLogger
         return false;
     }
 
-    void Init(std::filesystem::path file)
+    void Init(std::filesystem::path file, std::string clientSktName, std::filesystem::path iniFile)
     {
         errFile = file;
+        ParseConfig(iniFile);
+        if (!srvrSktName.empty())
+        {
+            // open socket to server
+            srvrSkt = 9999;
+            // preset clientPort
+            clientPort = 1111;
+            strcpy(srvrMsg.clientSktName, clientSktName.c_str());
+        }
     }
 
-    void LogError(std::string_view errMsg, const std::source_location loc)
+    void PopupError(std::string errMsg, std::string caption)
+    {
+        if (behavior == PopupBehavior::Local)
+        {
+            MessageBoxA(NULL, errMsg.c_str(), caption.c_str(), MB_ICONERROR);
+        }
+        else if (behavior == PopupBehavior::Remote)
+        {
+            strcpy(srvrMsg.caption, caption.c_str());
+            strcpy(srvrMsg.errBuf, errMsg.c_str());
+            // send errMsg to server app
+            // wait for acknowledge from server app
+        }
+    }
+
+    void LogError(std::string errMsg, std::string caption, const std::source_location loc)
     {
         if (errFile.empty())
             return;
 
         const std::lock_guard<std::mutex> lock(logLock);
 
-        const std::string &locStr = std::string(loc.file_name()) + ":|" + std::to_string(loc.line()) +
+        const std::string& locStr = std::string(loc.file_name()) + ":|" + std::to_string(loc.line()) +
                                     "| " + loc.function_name();
 
         std::ofstream ofs;
 
         if (numMsgs < maxMsgs && !MsgLogged(locStr))
         {
-            if (firstpass)
+            if (firstPass)
             {
                 if (std::filesystem::exists(errFile))
                 {
@@ -86,7 +143,7 @@ namespace ErrorLogger
                 }
 
                 ofs.open(errFile);
-                firstpass = false;
+                firstPass = false;
             }
             else
             {
@@ -95,8 +152,11 @@ namespace ErrorLogger
 
             if (ofs)
             {
-                ofs << locStr << ": " << errMsg << std::endl;
+                std::ostringstream oss;
+                oss << locStr << ": " << caption << ": " << errMsg << std::endl;
+                ofs << oss.str();
                 ofs.close();
+                PopupError(oss.str(), caption);
             }
             else
             {

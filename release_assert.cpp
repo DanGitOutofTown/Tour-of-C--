@@ -33,7 +33,7 @@ namespace ReleaseAssert
         if (logAsserts)
         {
             // Will only log if ErrorLogger::Init() has been called in main executable
-            ErrorLogger::LogError("Assert: " + std::string(expression), loc);
+            ErrorLogger::LogError(std::string(expression), "Assertion Failed", loc);
         }
 
         if (!enableBehavior || behavior == Behavior::Ignore)
@@ -41,9 +41,15 @@ namespace ReleaseAssert
             return;
         }
 
-        if (behavior == Behavior::Popup)
+        if (behavior == Behavior::Popup && !logAsserts)
         {
-            MessageBoxA(NULL, expression, "Assertion failed", MB_ICONERROR);
+            const std::string& locStr = std::string(loc.file_name()) + ":|" + std::to_string(loc.line()) +
+                                        "| " + loc.function_name();
+
+            std::ostringstream oss;
+            oss << locStr << ": " << std::string(expression) << std::endl;
+
+            ErrorLogger::PopupError(oss.str(), "Assertion Failed");
             return;
         }
 
