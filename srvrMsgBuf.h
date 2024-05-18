@@ -2,14 +2,14 @@
 
 namespace ErrorLogger
 {
-    constexpr int maxCaptionSz{64};
-    constexpr int maxClientSktNameLen{64};
-    constexpr int maxErrMsgBufSz{256};
+    constexpr int captionBufSz{64};
+    constexpr int clientSktNameBufSz{64};
+    constexpr int errMsgBufSz{256};
 
     struct SrvrMsgBuf
     {
-        char caption[maxCaptionSz];
-        char clientSktName[maxClientSktNameLen];
-        char errMsgBuf[maxErrMsgBufSz];
+        char caption[captionBufSz];
+        char clientSktName[clientSktNameBufSz];
+        char errMsg[errMsgBufSz];
     };
 }

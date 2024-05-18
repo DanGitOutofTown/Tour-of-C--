@@ -79,7 +79,7 @@ namespace ErrorLogger
             srvrSkt = 9999;
             // preset clientPort
             clientPort = 1111;
-            strncpy(srvrMsgBuf.clientSktName, clientSktName.c_str(), maxClientSktNameLen);
+            strncpy(srvrMsgBuf.clientSktName, clientSktName.c_str(), clientSktNameBufSz);
         }
     }
 
@@ -93,8 +93,8 @@ namespace ErrorLogger
         }
         else if (location == PopupLocation::Remote)
         {
-            strncpy(srvrMsgBuf.caption, caption.c_str(), maxCaptionSz);
-            strncpy(srvrMsgBuf.errMsgBuf, errMsg.c_str(), maxErrMsgBufSz);
+            strncpy(srvrMsgBuf.caption, caption.c_str(), captionBufSz);
+            strncpy(srvrMsgBuf.errMsg, errMsg.c_str(), errMsgBufSz);
             
             // send srvrMsgBuf to server app
             // wait for acknowledge from server app
