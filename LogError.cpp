@@ -1,6 +1,4 @@
-#include <iostream>
 #include <fstream>
-#include <sstream>
 #include <string>
 #include <array>
 #include <mutex>
@@ -8,13 +6,6 @@
 #include <ctime>
 
 #include "LogError.h"
-
-#ifdef TRAINER_LOG
-#include "TrainerLog.h"
-#define TRAINER_LOG_ERRMSG(msg) TRAINER_LOG::MSG(TRAINER_lOG::ERROR, msg);
-#else
-#define TRAINER_LOG_ERRMSG(msg)  // no-op
-#endif
 
 namespace ErrorLogger
 {
@@ -90,9 +81,8 @@ namespace ErrorLogger
                 else if (!std::filesystem::exists(errFile.parent_path()) &&
                          !std::filesystem::create_directories(errFile.parent_path()))
                 {
-                    auto msg = locStr + ": " + "Can't create directory " + errFile.parent_path().string();
-                    std::cerr << msg << std::endl;
-                    TRAINER_LOG_ERRMSG(msg);
+                    throw std::runtime_error(locStr + ": " + "Can't create directory " +
+                                             errFile.parent_path().string());
                 }
 
                 ofs.open(errFile);
@@ -105,17 +95,12 @@ namespace ErrorLogger
 
             if (ofs)
             {
-                std::ostringstream oss;
-                oss << locStr << ": " << errMsg << std::endl;
-                ofs << oss.str();
+                ofs << locStr << ": " << errMsg << std::endl;
                 ofs.close();
-                TRAINER_LOG_ERRMSG(oss.str());
             }
             else
             {
-                auto msg = locStr + ": " + "Can't open " + errFile.string() + " for write";
-                std::cerr << msg << std::endl;
-                TRAINER_LOG_ERRMSG(msg);
+                throw std::runtime_error(locStr + ": " + "Can't open " + errFile.string() + " for write");
             }
 
             msgLog[numMsgs] = locStr;
@@ -131,13 +116,10 @@ namespace ErrorLogger
             {
                 ofs << msg << std::endl;
                 ofs.close();
-                TRAINER_LOG_ERRMSG(msg);
             }
             else
             {
-                auto msg = locStr + ": " + "Can't open " + errFile.string() + " for append";
-                std::cerr << msg << std::endl;
-                TRAINER_LOG_ERRMSG(msg);
+                throw std::runtime_error(locStr + ": " + "Can't open " + errFile.string() + " for append");
             }
 
             numMsgs++; // no more logging
