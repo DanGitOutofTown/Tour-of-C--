@@ -8,6 +8,7 @@
 #include "windows.h"
 
 #include "LogError.h"
+#include "SrvrMsgBuf.h"
 
 namespace ErrorLogger
 {
@@ -21,38 +22,38 @@ namespace ErrorLogger
         std::array<std::string, maxMsgs> msgLog;
         int numMsgs{0};
         std::mutex logLock;
+        std::mutex popupLock;
         bool firstPass{true};
+
+        enum class PopupLocation
+        {
+            Local,
+            Remote
+        };
+
+        SrvrMsgBuf srvrMsgBuf;
 
         // Set default configuration
         // To be overridden only through ParseConfig()
         std::string srvrSktName;
         int srvrPort{0};
         int clientPort{0};
+        bool enablePopups = true;
+        PopupLocation location = PopupLocation::Local;
 
         int srvrSkt{0};
 
-        enum class PopupBehavior
-        {
-            Local,
-            Remote,
-            Off,
-        };
-
-        PopupBehavior behavior = PopupBehavior::Local;
-
         std::string clientSktName;
-        struct SrvrMsg
-        {
-            char caption[64];
-            char clientSktName[64];
-            char errBuf[256];
-        } srvrMsg;
+
 
         void ParseConfig(std::filesystem::path iniFile)
         {
-            // override defaults above
-            ;
-        }
+            if (!iniFile.empty())
+            {
+                // override defaults above
+                ;
+            }
+       }
     }
 
     inline bool MsgLogged(std::string_view msg)
@@ -78,21 +79,24 @@ namespace ErrorLogger
             srvrSkt = 9999;
             // preset clientPort
             clientPort = 1111;
-            strcpy(srvrMsg.clientSktName, clientSktName.c_str());
+            strncpy(srvrMsgBuf.clientSktName, clientSktName.c_str(), maxClientSktNameLen);
         }
     }
 
     void PopupError(std::string errMsg, std::string caption)
     {
-        if (behavior == PopupBehavior::Local)
+        const std::lock_guard<std::mutex> lock(popupLock);
+
+        if (location == PopupLocation::Local)
         {
             MessageBoxA(NULL, errMsg.c_str(), caption.c_str(), MB_ICONERROR);
         }
-        else if (behavior == PopupBehavior::Remote)
+        else if (location == PopupLocation::Remote)
         {
-            strcpy(srvrMsg.caption, caption.c_str());
-            strcpy(srvrMsg.errBuf, errMsg.c_str());
-            // send errMsg to server app
+            strncpy(srvrMsgBuf.caption, caption.c_str(), maxCaptionSz);
+            strncpy(srvrMsgBuf.errMsgBuf, errMsg.c_str(), maxErrMsgBufSz);
+            
+            // send srvrMsgBuf to server app
             // wait for acknowledge from server app
         }
     }

@@ -50,6 +50,7 @@ namespace ReleaseAssert
             oss << locStr << ": " << std::string(expression) << std::endl;
 
             ErrorLogger::PopupError(oss.str(), "Assertion Failed");
+            
             return;
         }
 
