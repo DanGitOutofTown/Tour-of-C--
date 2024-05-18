@@ -45,7 +45,6 @@ namespace ErrorLogger
 
         std::string clientSktName;
 
-
         void ParseConfig(std::filesystem::path iniFile)
         {
             if (!iniFile.empty())
@@ -71,14 +70,18 @@ namespace ErrorLogger
 
     void Init(std::filesystem::path file, std::string clientSktName, std::filesystem::path iniFile)
     {
-        errFile = file;
-        ParseConfig(iniFile);
-        if (!srvrSktName.empty())
+        if (!file.empty())
         {
-            // open socket to server
-            srvrSkt = 9999;
+            errFile = file;
+        }
+
+        ParseConfig(iniFile);
+
+        if (!srvrSktName.empty() && srvrPort != 0 && clientPort != 0)
+        {
+            // assign srvrSkt by opening socket to server
             // preset clientPort
-            clientPort = 1111;
+            
             strncpy(srvrMsgBuf.clientSktName, clientSktName.c_str(), clientSktNameBufSz);
         }
     }
@@ -99,7 +102,7 @@ namespace ErrorLogger
             strncpy(srvrMsgBuf.caption, caption.c_str(), captionBufSz);
             strncpy(srvrMsgBuf.errMsg, errMsg.c_str(), errMsgBufSz);
             
-            // send srvrMsgBuf to server app
+            // send srvrMsgBuf to server app using UMP
             // wait for acknowledge from server app
         }
     }
@@ -145,8 +148,8 @@ namespace ErrorLogger
                 else if (!std::filesystem::exists(errFile.parent_path()) &&
                          !std::filesystem::create_directories(errFile.parent_path()))
                 {
-                    throw std::runtime_error(locStr + ": " + "Can't create directory " +
-                                             errFile.parent_path().string());
+                    PopupError(locStr + ": " + "Can't create directory " +
+                               errFile.parent_path().string(), "Error");
                 }
 
                 ofs.open(errFile);
@@ -167,7 +170,7 @@ namespace ErrorLogger
             }
             else
             {
-                throw std::runtime_error(locStr + ": " + "Can't open " + errFile.string() + " for write");
+                PopupError(locStr + ": " + "Can't open " + errFile.string() + " for write", "Error");
             }
 
             msgLog[numMsgs] = locStr;
@@ -186,7 +189,7 @@ namespace ErrorLogger
             }
             else
             {
-                throw std::runtime_error(locStr + ": " + "Can't open " + errFile.string() + " for append");
+                PopupError(locStr + ": " + "Can't open " + errFile.string() + " for append", "Error");
             }
 
             numMsgs++; // no more logging

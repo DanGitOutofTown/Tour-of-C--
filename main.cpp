@@ -18,6 +18,9 @@ int main()
 
     assert(!"main() message 1");
 
+    // Will only log if ErrorLogger::Init() has been called in main executable
+    // To be replaced with TrainerLog::Msg:Error which in turn will call LogError()
+    // and also output to LogFileViewer file.
     ErrorLogger::LogError("An error message");
 
     test();

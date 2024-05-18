@@ -33,6 +33,8 @@ namespace ReleaseAssert
         if (logAsserts)
         {
             // Will only log if ErrorLogger::Init() has been called in main executable
+            // To be replaced with TrainerLog::Msg:Error which in turn will call LogError()
+            // and also output to LogFileViewer file.
             ErrorLogger::LogError(std::string(expression), "Assertion Failed", loc);
         }
 
