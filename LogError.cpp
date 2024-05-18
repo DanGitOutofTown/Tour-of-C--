@@ -85,6 +85,9 @@ namespace ErrorLogger
 
     void PopupError(std::string errMsg, std::string caption)
     {
+        if (!enablePopups)
+            return;
+            
         const std::lock_guard<std::mutex> lock(popupLock);
 
         if (location == PopupLocation::Local)
