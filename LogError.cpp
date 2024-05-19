@@ -8,7 +8,7 @@
 #include "windows.h"
 
 #include "LogError.h"
-#include "SrvrMsgBuf.h"
+#include "ClientToSrvrMsgBuf.h"
 
 namespace ErrorLogger
 {
@@ -31,13 +31,15 @@ namespace ErrorLogger
             Remote
         };
 
-        SrvrMsgBuf srvrMsgBuf;
+        ClientToSrvrMsgBuf msgBuf;
+        SrvrResponse response;
 
         // Set default configuration
         // To be overridden only through ParseConfig()
         std::string srvrSktName;
         int srvrPort{0};
         int clientPort{0};
+        bool enableLogging = true;
         bool enablePopups = true;
         PopupLocation location = PopupLocation::Local;
 
@@ -45,11 +47,11 @@ namespace ErrorLogger
 
         std::string clientSktName;
 
-        void ParseConfig(std::filesystem::path iniFile)
+        void ParseConfig(const std::filesystem::path& iniFile)
         {
             if (!iniFile.empty())
             {
-                // override defaults above
+                // parse and override defaults above
                 ;
             }
        }
@@ -68,25 +70,41 @@ namespace ErrorLogger
         return false;
     }
 
-    void Init(std::filesystem::path file, std::string clientSktName, std::filesystem::path iniFile)
+    void Init(const std::filesystem::path& errLogFile, const std::string& clientSktName,
+              const std::filesystem::path& iniFile)
     {
-        if (!file.empty())
-        {
-            errFile = file;
-        }
-
         ParseConfig(iniFile);
 
-        if (!srvrSktName.empty() && srvrPort != 0 && clientPort != 0)
+        if (enableLogging && !errLogFile.empty())
         {
-            // assign srvrSkt by opening socket to server
-            // preset clientPort
-            
-            strncpy(srvrMsgBuf.clientSktName, clientSktName.c_str(), clientSktNameBufSz);
+            errFile = errLogFile;
+        }
+        else
+        {
+            enableLogging = false;
+        }
+
+        if (!enablePopups)
+            return;
+
+        if (location == PopupLocation::Remote)
+        {
+            if (!srvrSktName.empty() && srvrPort > 0 && clientPort > 0)
+            {
+                // assign srvrSkt by opening socket to server
+                // preset clientPort
+
+                strncpy(msgBuf.clientSktName, clientSktName.c_str(), clientSktNameBufSz);
+            }
+            else
+            {
+                enablePopups = false;
+                LogError("Communication with remote Popup Server not setup correctly, popups disabled.");
+            }
         }
     }
 
-    void PopupError(std::string errMsg, std::string caption)
+    void PopupError(const std::string& errMsg, const std::string& caption)
     {
         if (!enablePopups)
             return;
@@ -95,27 +113,63 @@ namespace ErrorLogger
 
         if (location == PopupLocation::Local)
         {
-            MessageBoxA(NULL, errMsg.c_str(), caption.c_str(), MB_ICONERROR);
+            auto result = MessageBoxA(NULL, (errMsg + "\nHit Retry to disable popups").c_str(),
+                                      caption.c_str(), MB_ICONERROR | MB_ABORTRETRYIGNORE);
+            
+            switch (result)
+            {
+                case IDABORT:
+                    std::terminate();
+                case IDRETRY:
+                    enablePopups = false;
+                    break;
+                case IDIGNORE:
+                    break;
+                default:
+                    break;
+            }
         }
         else if (location == PopupLocation::Remote)
         {
-            strncpy(srvrMsgBuf.caption, caption.c_str(), captionBufSz);
-            strncpy(srvrMsgBuf.errMsg, errMsg.c_str(), errMsgBufSz);
+            strncpy(msgBuf.caption, caption.c_str(), captionBufSz);
+            strncpy(msgBuf.errMsg, errMsg.c_str(), errMsgBufSz);
             
-            // send srvrMsgBuf to server app using UMP
-            // wait for acknowledge from server app
+            // send msgBuf to server app using UMP
+            // wait for response from server app
+            
+            switch (response)
+            {
+                case SrvrResponse::Ignore:
+                    break;
+                case SrvrResponse::DisablePopups:
+                    enablePopups = false;
+                    break;
+                case SrvrResponse::TerminateClient:
+                    std::terminate();
+                default:
+                    break;
+            }
         }
     }
 
-    void LogError(std::string errMsg, std::string caption, const std::source_location loc)
+    void LogError(const std::string& errMsg, const std::string& caption, const std::source_location& loc)
     {
-        if (errFile.empty())
+        if (!(enableLogging || enablePopups))
             return;
-
-        const std::lock_guard<std::mutex> lock(logLock);
 
         const std::string& locStr = std::string(loc.file_name()) + ":|" + std::to_string(loc.line()) +
                                     "| " + loc.function_name();
+
+        std::ostringstream oss;
+        oss << locStr << ": " << caption << ": " << errMsg << std::endl;
+
+        if (!enableLogging)
+        {
+            PopupError(oss.str(), caption);
+            return;
+        }
+
+        const std::lock_guard<std::mutex> lock(logLock);
 
         std::ofstream ofs;
 
@@ -145,11 +199,12 @@ namespace ErrorLogger
 
                     std::filesystem::rename(errFile, dest);
                 }
-                else if (!std::filesystem::exists(errFile.parent_path()) &&
+                else if (enablePopups && !std::filesystem::exists(errFile.parent_path()) &&
                          !std::filesystem::create_directories(errFile.parent_path()))
                 {
                     PopupError(locStr + ": " + "Can't create directory " +
-                               errFile.parent_path().string(), "Error");
+                               errFile.parent_path().string() + ", logging stopped.", "Error");
+                    enableLogging = false;
                 }
 
                 ofs.open(errFile);
@@ -162,15 +217,16 @@ namespace ErrorLogger
 
             if (ofs)
             {
-                std::ostringstream oss;
-                oss << locStr << ": " << caption << ": " << errMsg << std::endl;
                 ofs << oss.str();
                 ofs.close();
                 PopupError(oss.str(), caption);
             }
-            else
+            else if (enablePopups)
             {
-                PopupError(locStr + ": " + "Can't open " + errFile.string() + " for write", "Error");
+                PopupError(locStr + ": " + "Can't open " + errFile.string() +
+                           " for write, logging stopped.", "Error");
+                PopupError(oss.str(), caption);
+                enableLogging = false;
             }
 
             msgLog[numMsgs] = locStr;
@@ -180,7 +236,8 @@ namespace ErrorLogger
         {
             ofs.open(errFile, std::ios::app);
 
-            std::string msg = "Max messages of " + std::to_string(maxMsgs) + " exceeded, logging stopped";
+            std::string msg = "Max messages of " + std::to_string(maxMsgs) +
+                              " exceeded, logging stopped";
 
             if (ofs)
             {
@@ -189,10 +246,12 @@ namespace ErrorLogger
             }
             else
             {
-                PopupError(locStr + ": " + "Can't open " + errFile.string() + " for append", "Error");
+                PopupError(locStr + ": " + "Can't open " + errFile.string() +
+                           " for append, logging stopped.", "Error");
             }
 
-            numMsgs++; // no more logging
+            PopupError(msg, caption);
+            enableLogging = false;
         }
     }
 }

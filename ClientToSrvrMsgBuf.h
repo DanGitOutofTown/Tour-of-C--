@@ -6,10 +6,17 @@ namespace ErrorLogger
     constexpr int clientSktNameBufSz{64};
     constexpr int errMsgBufSz{256};
 
-    struct SrvrMsgBuf
+    struct ClientToSrvrMsgBuf
     {
         char caption[captionBufSz];
         char clientSktName[clientSktNameBufSz];
         char errMsg[errMsgBufSz];
+    };
+
+    enum class SrvrResponse : int
+    {
+        Ignore,
+        DisablePopups,
+        TerminateClient
     };
 }

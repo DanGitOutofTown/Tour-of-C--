@@ -20,8 +20,8 @@ namespace ReleaseAssert
         Terminate
     };
 
-    void ParseConfig(std::filesystem::path iniFile);
-    void release_assert(const char *expression, const std::source_location &);
+    void ParseConfig(const std::filesystem::path& iniFile);
+    void release_assert(const char *expression, const std::source_location& loc);
 }
 
 #else

@@ -22,9 +22,9 @@ namespace ReleaseAssert
         Behavior behavior = Behavior::Popup;
     }
 
-    void ParseConfig(std::filesystem::path iniFile)
+    void ParseConfig(const std::filesystem::path& iniFile)
     {
-        // override defaults above
+        // parse and override defaults above
         ;
     }
 

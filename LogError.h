@@ -6,7 +6,11 @@
 
 namespace ErrorLogger
 {
-    void Init(std::filesystem::path file, std::string clientSktName, std::filesystem::path iniFile);
-    void LogError(std::string errMsg, std::string caption = "Error", const std::source_location loc = std::source_location::current());
-    void PopupError(std::string errMsg, std::string caption);
+    void Init(const std::filesystem::path& errLogFile, const std::string& clientSktName,
+              const std::filesystem::path& iniFile);
+    
+    void LogError(const std::string& errMsg, const std::string& caption = "Error",
+                  const std::source_location& loc = std::source_location::current());
+    
+    void PopupError(const std::string& errMsg, const std::string& caption);
 }
