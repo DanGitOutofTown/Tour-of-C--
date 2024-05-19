@@ -23,8 +23,7 @@ namespace ReleaseAssert
 
     void ParseConfig(const std::filesystem::path& iniFile)
     {
-        // parse and override defaults above
-        ;
+        ;  // parse and override defaults above
     }
 
     void release_assert(const char *expression, const std::source_location& loc)

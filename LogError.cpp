@@ -17,8 +17,8 @@ namespace ErrorLogger
         //***** Begin default configuration *****//
         // To be overridden only through ParseConfig()
  
-        bool enableLogging = true;
-        bool enablePopups = true;
+        bool enableLogging = false;
+        bool enablePopups = false;
         bool enableUniqueMsgs = true;
 
         enum class PopupLocation
@@ -58,8 +58,7 @@ namespace ErrorLogger
         {
             if (!iniFile.empty())
             {
-                // parse and override defaults above
-                ;
+                ; // parse and override defaults
             }
        }
     }
@@ -83,16 +82,16 @@ namespace ErrorLogger
     void Init(const std::filesystem::path& errLogFile, const std::string& clientSktName,
               const std::filesystem::path& iniFile)
     {
-        ParseConfig(iniFile);
-
-        if (enableLogging && !errLogFile.empty())
+        if (!errLogFile.empty())
         {
+            // Have a log file so enable logging and popups
+            // in case we don't have an iniFile
+            enableLogging = true;
+            enablePopups = true;
             errFile = errLogFile;
         }
-        else
-        {
-            enableLogging = false;
-        }
+
+        ParseConfig(iniFile);
 
         if (!enablePopups)
             return;
