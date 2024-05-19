@@ -117,8 +117,8 @@ namespace ErrorLogger
 
         if (location == PopupLocation::Local)
         {
-            auto result = MessageBoxA(NULL, (errMsg + "\nHit Retry to disable popups").c_str(),
-                                      caption.c_str(), MB_ICONERROR | MB_ABORTRETRYIGNORE);
+            auto result = MessageBoxA(NULL, (errMsg + "\nIf too many popups hit Retry to disable").c_str(),
+                                      caption.c_str(), MB_ICONERROR | MB_ABORTRETRYIGNORE | MB_DEFBUTTON3);
             
             switch (result)
             {
