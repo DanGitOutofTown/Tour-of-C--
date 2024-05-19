@@ -21,8 +21,12 @@ int main()
     // Will only log if ErrorLogger::Init() has been called in main executable
     // To be replaced with TrainerLog::Msg:Error which in turn will call LogError()
     // and also output to LogFileViewer file.
-    ErrorLogger::LogError("An error message");
-
+    for (int i = 0; i < 3; i++)
+    {
+        // Will only log once
+        ErrorLogger::LogError("An error message");
+    }
+   
     test();
 
     cout << "Hello world!" << endl;

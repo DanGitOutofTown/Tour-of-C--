@@ -163,6 +163,9 @@ namespace ErrorLogger
         std::ostringstream oss;
         oss << locStr << ": " << caption << ": " << errMsg << std::endl;
 
+        if (MsgLogged(locStr))
+            return;
+
         if (!enableLogging)
         {
             PopupError(oss.str(), caption);
@@ -173,7 +176,7 @@ namespace ErrorLogger
 
         std::ofstream ofs;
 
-        if (numMsgs < maxMsgs && !MsgLogged(locStr))
+        if (numMsgs < maxMsgs)
         {
             if (firstPass)
             {
@@ -221,7 +224,7 @@ namespace ErrorLogger
                 ofs.close();
                 PopupError(oss.str(), caption);
             }
-            else if (enablePopups)
+            else
             {
                 PopupError(locStr + ": " + "Can't open " + errFile.string() +
                            " for write, logging stopped.", "Error");
@@ -250,7 +253,7 @@ namespace ErrorLogger
                            " for append, logging stopped.", "Error");
             }
 
-            PopupError(msg, caption);
+            PopupError(oss.str(), caption);
             enableLogging = false;
         }
     }

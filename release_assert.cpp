@@ -16,9 +16,8 @@ namespace ReleaseAssert
     {
         // Set default configuration
         // To be overridden only through ParseConfig()
-        bool logAsserts = true; // temporarily true until ParseConfig implemented
-        bool enableBehavior = true; // temporarily true until ParseConfig implemented
-        
+        bool logAsserts = true;
+        bool enableBehavior = true;
         Behavior behavior = Behavior::Popup;
     }
 
