@@ -19,6 +19,7 @@ namespace ErrorLogger
  
         bool enableLogging = true;
         bool enablePopups = true;
+        bool enableUniqueMsgs = true;
 
         enum class PopupLocation
         {
@@ -27,8 +28,8 @@ namespace ErrorLogger
         };
         PopupLocation location = PopupLocation::Local;
 
-        int maxUniqueErrMsgs{10};
-        int maxUniquePopups{3}; // must be <= maxUniqueErrMsgs
+        int maxErrMsgs{10};
+        int maxPopups{5}; // must be <= maxErrMsgs
         int srvrPort{0};
         int clientPort{0};
 
@@ -40,9 +41,9 @@ namespace ErrorLogger
         std::filesystem::path errFile;
         std::string clientSktName;
 
-        std::vector<std::string> uniqueErrMsgs;
-        int numUniqueErrMsgs{0};
-        int numUniquePopups{0};
+        std::vector<std::string> ErrMsgs;
+        int numErrMsgs{0};
+        int numPopups{0};
 
         std::mutex logLock;
         std::mutex popupLock;
@@ -65,7 +66,10 @@ namespace ErrorLogger
 
     inline bool MsgLogged(std::string_view msg)
     {
-        for (const auto &m : uniqueErrMsgs)
+        if (!enableUniqueMsgs)
+            return false;
+
+        for (const auto &m : ErrMsgs)
         {
             if (m == msg)
             {
@@ -112,7 +116,7 @@ namespace ErrorLogger
 
     void PopupError(const std::string& errMsg, const std::string& caption)
     {
-        if (!enablePopups || numUniquePopups >= maxUniquePopups)
+        if (!enablePopups || numPopups >= maxPopups)
             return;
             
         const std::lock_guard<std::mutex> lock(popupLock);
@@ -135,7 +139,7 @@ namespace ErrorLogger
                     break;
             }
             
-            numUniquePopups++;
+            numPopups++;
         }
         else if (location == PopupLocation::Remote)
         {
@@ -158,7 +162,7 @@ namespace ErrorLogger
                     break;
             }
             
-            numUniquePopups++;
+            numPopups++;
         }
     }
 
@@ -186,7 +190,7 @@ namespace ErrorLogger
 
         std::ofstream ofs;
 
-        if (numUniqueErrMsgs < maxUniqueErrMsgs)
+        if (numErrMsgs < maxErrMsgs)
         {
             if (logErrorFirstPass)
             {
@@ -242,14 +246,14 @@ namespace ErrorLogger
                 enableLogging = false;
             }
 
-            uniqueErrMsgs.push_back(locStr);
-            numUniqueErrMsgs++;
+            ErrMsgs.push_back(locStr);
+            numErrMsgs++;
         }
-        else if (numUniqueErrMsgs == maxUniqueErrMsgs)
+        else if (numErrMsgs == maxErrMsgs)
         {
             ofs.open(errFile, std::ios::app);
 
-            std::string msg = "Max messages of " + std::to_string(maxUniqueErrMsgs) +
+            std::string msg = "Max messages of " + std::to_string(maxErrMsgs) +
                               " exceeded, logging stopped";
 
             if (ofs)
