@@ -28,6 +28,7 @@ namespace ErrorLogger
         PopupLocation location = PopupLocation::Local;
 
         int maxUniqueErrMsgs{10};
+        int maxUniquePopups{3}; // must be <= maxUniqueErrMsgs
         int srvrPort{0};
         int clientPort{0};
 
@@ -41,6 +42,7 @@ namespace ErrorLogger
 
         std::vector<std::string> uniqueErrMsgs;
         int numUniqueErrMsgs{0};
+        int numUniquePopups{0};
 
         std::mutex logLock;
         std::mutex popupLock;
@@ -110,7 +112,7 @@ namespace ErrorLogger
 
     void PopupError(const std::string& errMsg, const std::string& caption)
     {
-        if (!enablePopups)
+        if (!enablePopups || numUniquePopups >= maxUniquePopups)
             return;
             
         const std::lock_guard<std::mutex> lock(popupLock);
@@ -132,6 +134,8 @@ namespace ErrorLogger
                 default:
                     break;
             }
+            
+            numUniquePopups++;
         }
         else if (location == PopupLocation::Remote)
         {
@@ -153,6 +157,8 @@ namespace ErrorLogger
                 default:
                     break;
             }
+            
+            numUniquePopups++;
         }
     }
 
