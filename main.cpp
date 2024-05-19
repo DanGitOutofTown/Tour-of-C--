@@ -23,7 +23,7 @@ int main()
     // and also output to LogFileViewer file.
     for (int i = 0; i < 3; i++)
     {
-        // Will only log once
+        // Will only log and popup once
         ErrorLogger::LogError("An error message");
     }
    
