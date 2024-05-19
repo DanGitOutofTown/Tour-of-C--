@@ -1,6 +1,6 @@
 #include <fstream>
 #include <sstream>
-#include <array>
+#include <vector>
 #include <mutex>
 #include <chrono>
 #include <ctime>
@@ -14,38 +14,42 @@ namespace ErrorLogger
 {
     namespace
     {
-        std::filesystem::path errFile;
-
-        // Maximum number of unique assert messages that can be logged
-        constexpr int maxMsgs{10};
-
-        std::array<std::string, maxMsgs> msgLog;
-        int numMsgs{0};
-        std::mutex logLock;
-        std::mutex popupLock;
-        bool firstPass{true};
+        //***** Begin default configuration *****//
+        // To be overridden only through ParseConfig()
+ 
+        bool enableLogging = true;
+        bool enablePopups = true;
 
         enum class PopupLocation
         {
             Local,
             Remote
         };
-
-        ClientToSrvrMsgBuf msgBuf;
-        SrvrResponse response;
-
-        // Set default configuration
-        // To be overridden only through ParseConfig()
-        std::string srvrSktName;
-        int srvrPort{0};
-        int clientPort{0};
-        bool enableLogging = true;
-        bool enablePopups = true;
         PopupLocation location = PopupLocation::Local;
 
+        int maxUniqueErrMsgs{10};
+        int srvrPort{0};
+        int clientPort{0};
+
+        std::string srvrSktName;
+    
+        //***** End default configuration *****//
+
+        // passed into Init()
+        std::filesystem::path errFile;
+        std::string clientSktName;
+
+        std::vector<std::string> uniqueErrMsgs;
+        int numUniqueErrMsgs{0};
+
+        std::mutex logLock;
+        std::mutex popupLock;
+
+        ClientToSrvrMsgBuf srvrMsgBuf;
+        SrvrResponse srvrResp;
         int srvrSkt{0};
 
-        std::string clientSktName;
+        bool logErrorFirstPass{true};
 
         void ParseConfig(const std::filesystem::path& iniFile)
         {
@@ -59,7 +63,7 @@ namespace ErrorLogger
 
     inline bool MsgLogged(std::string_view msg)
     {
-        for (const auto &m : msgLog)
+        for (const auto &m : uniqueErrMsgs)
         {
             if (m == msg)
             {
@@ -94,7 +98,7 @@ namespace ErrorLogger
                 // assign srvrSkt by opening socket to server
                 // preset clientPort
 
-                strncpy(msgBuf.clientSktName, clientSktName.c_str(), clientSktNameBufSz);
+                strncpy(srvrMsgBuf.clientSktName, clientSktName.c_str(), clientSktNameBufSz);
             }
             else
             {
@@ -131,13 +135,13 @@ namespace ErrorLogger
         }
         else if (location == PopupLocation::Remote)
         {
-            strncpy(msgBuf.caption, caption.c_str(), captionBufSz);
-            strncpy(msgBuf.errMsg, errMsg.c_str(), errMsgBufSz);
+            strncpy(srvrMsgBuf.caption, caption.c_str(), captionBufSz);
+            strncpy(srvrMsgBuf.errMsg, errMsg.c_str(), errMsgBufSz);
             
             // send msgBuf to server app using UMP
             // wait for response from server app
             
-            switch (response)
+            switch (srvrResp)
             {
                 case SrvrResponse::Ignore:
                     break;
@@ -176,9 +180,9 @@ namespace ErrorLogger
 
         std::ofstream ofs;
 
-        if (numMsgs < maxMsgs)
+        if (numUniqueErrMsgs < maxUniqueErrMsgs)
         {
-            if (firstPass)
+            if (logErrorFirstPass)
             {
                 if (std::filesystem::exists(errFile))
                 {
@@ -211,7 +215,7 @@ namespace ErrorLogger
                 }
 
                 ofs.open(errFile);
-                firstPass = false;
+                logErrorFirstPass = false;
             }
             else
             {
@@ -232,14 +236,14 @@ namespace ErrorLogger
                 enableLogging = false;
             }
 
-            msgLog[numMsgs] = locStr;
-            numMsgs++;
+            uniqueErrMsgs.push_back(locStr);
+            numUniqueErrMsgs++;
         }
-        else if (numMsgs == maxMsgs)
+        else if (numUniqueErrMsgs == maxUniqueErrMsgs)
         {
             ofs.open(errFile, std::ios::app);
 
-            std::string msg = "Max messages of " + std::to_string(maxMsgs) +
+            std::string msg = "Max messages of " + std::to_string(maxUniqueErrMsgs) +
                               " exceeded, logging stopped";
 
             if (ofs)
@@ -255,6 +259,7 @@ namespace ErrorLogger
 
             PopupError(oss.str(), caption);
             enableLogging = false;
+            enablePopups = false;
         }
     }
 }
