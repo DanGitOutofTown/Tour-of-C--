@@ -6,7 +6,7 @@ namespace ErrorLogger
     constexpr int clientSktNameBufSz{32};
     constexpr int errMsgBufSz{80};
     constexpr int errFileNameBufSz{80};
-    constexpr int instructionsBufSz{256};
+    constexpr int instructionsBufSz{1024};
 
     struct ClientToSrvrMsgBuf
     {
