@@ -120,9 +120,23 @@ namespace ErrorLogger
             
         const std::lock_guard<std::mutex> lock(popupLock);
 
+        std::string instructions =
+            "\nError is now logged, but if convenient please leave popup"
+            "\nup and contact a software engineer to debug the issue."
+            "\n\nHit Abort to kill client process to allow for trainer reset"
+            "\nHit Ignore to continue"
+            "\nHit Retry to disable popups and continue";
+
+        if (enableLogging)
+        {
+            instructions += "\n\nError logged to " + std::filesystem::absolute(errFile).string() +
+                " and will not be overwritten when trainer is reset or new errors occur. "
+                "Please report error at earliest convenience. Thank you.";
+        }
+
         if (location == PopupLocation::Local)
         {
-            auto result = MessageBoxA(NULL, (errMsg + "\nIf too many popups hit Retry to disable").c_str(),
+            auto result = MessageBoxA(NULL, (errMsg + instructions).c_str(),
                                       caption.c_str(), MB_ICONERROR | MB_ABORTRETRYIGNORE | MB_DEFBUTTON3);
             
             switch (result)
@@ -144,7 +158,8 @@ namespace ErrorLogger
         {
             strncpy(srvrMsgBuf.caption, caption.c_str(), captionBufSz);
             strncpy(srvrMsgBuf.errMsg, errMsg.c_str(), errMsgBufSz);
-            
+            strncpy(srvrMsgBuf.instructions, instructions.c_str(), instructionsBufSz);
+
             // send msgBuf to server app using UMP
             // wait for response from server app
             
