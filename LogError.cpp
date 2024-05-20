@@ -121,15 +121,15 @@ namespace ErrorLogger
         const std::lock_guard<std::mutex> lock(popupLock);
 
         std::string instructions =
-            "\nError is now logged, but if convenient please leave popup"
-            "\nup and contact a software engineer to debug the issue."
-            "\n\nHit Abort to kill client process to allow for trainer reset"
-            "\nHit Ignore to continue"
-            "\nHit Retry to disable popups and continue";
+            "\nError is now logged, but if possible please leave this"
+            "\nmessage up and contact a software engineer to debug the issue."
+            "\n\nHit Abort to kill client process to allow for trainer reset."
+            "\n\nHit Ignore to continue. Training may be compromised."
+            "\n\nHit Retry to disable popups and continue. Training may be compromised.";
 
         if (enableLogging)
         {
-            instructions += "\n\nError logged to " + std::filesystem::absolute(errFile).string() +
+            instructions += "\n\nError is logged to " + std::filesystem::absolute(errFile).string() +
                 " and will not be overwritten when trainer is reset or new errors occur. "
                 "Please report error at earliest convenience. Thank you.";
         }
