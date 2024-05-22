@@ -17,7 +17,6 @@ namespace ReleaseAssert
         // Set default configuration
         // To be overridden only through ParseConfig()
         bool logAsserts = true;
-        bool enableBehavior = true;
         Behavior behavior = Behavior::Popup;
     }
 
@@ -36,7 +35,7 @@ namespace ReleaseAssert
             ErrorLogger::LogError(std::string(expression), "Assertion Failed", loc);
         }
 
-        if (!enableBehavior || behavior == Behavior::Ignore)
+        if (behavior == Behavior::Ignore)
         {
             return;
         }

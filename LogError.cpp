@@ -103,7 +103,7 @@ namespace ErrorLogger
                 // assign srvrSkt by opening socket to server
                 // preset clientPort
 
-                strncpy(srvrMsgBuf.clientSktName, clientSktName.c_str(), clientSktNameBufSz);
+                strncpy_s(srvrMsgBuf.clientSktName, clientSktName.c_str(), clientSktNameBufSz);
             }
             else
             {
@@ -156,9 +156,9 @@ namespace ErrorLogger
         }
         else if (location == PopupLocation::Remote)
         {
-            strncpy(srvrMsgBuf.caption, caption.c_str(), captionBufSz);
-            strncpy(srvrMsgBuf.errMsg, errMsg.c_str(), errMsgBufSz);
-            strncpy(srvrMsgBuf.instructions, instructions.c_str(), instructionsBufSz);
+            strncpy_s(srvrMsgBuf.caption, caption.c_str(), captionBufSz);
+            strncpy_s(srvrMsgBuf.errMsg, errMsg.c_str(), errMsgBufSz);
+            strncpy_s(srvrMsgBuf.instructions, instructions.c_str(), instructionsBufSz);
 
             // send msgBuf to server app using UMP
             // wait for response from server app
@@ -170,7 +170,7 @@ namespace ErrorLogger
                 case SrvrResponse::DisablePopups:
                     enablePopups = false;
                     break;
-                case SrvrResponse::TerminateClient:
+                case SrvrResponse::TerminateProcess:
                     std::terminate();
                 default:
                     break;
@@ -191,12 +191,10 @@ namespace ErrorLogger
         std::ostringstream oss;
         oss << locStr << ": " << caption << ": " << errMsg << std::endl;
 
-        if (MsgLogged(locStr))
-            return;
+        PopupError(oss.str(), caption);
 
-        if (!enableLogging)
+        if (!enableLogging || MsgLogged(locStr))
         {
-            PopupError(oss.str(), caption);
             return;
         }
 
@@ -250,13 +248,11 @@ namespace ErrorLogger
             {
                 ofs << oss.str();
                 ofs.close();
-                PopupError(oss.str(), caption);
             }
             else
             {
                 PopupError(locStr + ": " + "Can't open " + errFile.string() +
                            " for write, logging stopped.", "Error");
-                PopupError(oss.str(), caption);
                 enableLogging = false;
             }
 
@@ -281,7 +277,6 @@ namespace ErrorLogger
                            " for append, logging stopped.", "Error");
             }
 
-            PopupError(oss.str(), caption);
             enableLogging = false;
             enablePopups = false;
         }

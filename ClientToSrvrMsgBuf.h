@@ -21,6 +21,6 @@ namespace ErrorLogger
     {
         Ignore,
         DisablePopups,
-        TerminateClient
+        TerminateProcess
     };
 }
