@@ -35,11 +35,6 @@ namespace ReleaseAssert
             ErrorLogger::LogError(std::string(expression), "Assertion Failed", loc);
         }
 
-        if (behavior == Behavior::Ignore)
-        {
-            return;
-        }
-
         if (behavior == Behavior::Popup && !logAsserts)
         {
             const std::string& locStr = std::string(loc.file_name()) + ":|" + std::to_string(loc.line()) +

@@ -1,6 +1,9 @@
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <vector>
+#include <format>
+#include <algorithm>
 #include <mutex>
 #include <chrono>
 #include <ctime>
@@ -41,7 +44,7 @@ namespace ErrorLogger
         std::filesystem::path errFile;
         std::string clientSktName;
 
-        std::vector<std::string> ErrMsgs;
+        std::vector<std::string> errMsgs;
         int numErrMsgs{0};
         int numPopups{0};
 
@@ -65,21 +68,10 @@ namespace ErrorLogger
 
     inline bool MsgLogged(std::string_view msg)
     {
-        if (!enableUniqueMsgs)
-            return false;
-
-        for (const auto &m : ErrMsgs)
-        {
-            if (m == msg)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return std::find(errMsgs.begin(), errMsgs.end(), msg) != errMsgs.end();
     }
 
-    void Init(const std::filesystem::path& errLogFile, const std::string& clientSktName,
+    void Init(const std::filesystem::path& errLogFile, std::string_view clientSktName,
               const std::filesystem::path& iniFile)
     {
         if (!errLogFile.empty())
@@ -103,7 +95,7 @@ namespace ErrorLogger
                 // assign srvrSkt by opening socket to server
                 // preset clientPort
 
-                strncpy_s(srvrMsgBuf.clientSktName, clientSktName.c_str(), clientSktNameBufSz);
+                clientSktName.copy(srvrMsgBuf.clientSktName.data(), clientSktName.size()+1, 0);
             }
             else
             {
@@ -113,7 +105,7 @@ namespace ErrorLogger
         }
     }
 
-    void PopupError(const std::string& errMsg, const std::string& caption)
+    void PopupError(std::string_view errMsg, std::string_view caption)
     {
         if (!enablePopups || numPopups >= maxPopups)
             return;
@@ -136,8 +128,8 @@ namespace ErrorLogger
 
         if (location == PopupLocation::Local)
         {
-            auto result = MessageBoxA(NULL, (errMsg + instructions).c_str(),
-                                      caption.c_str(), MB_ICONERROR | MB_ABORTRETRYIGNORE | MB_DEFBUTTON3);
+            auto result = MessageBoxA(NULL, (std::string(errMsg) + instructions).data(),
+                                      caption.data(), MB_ICONERROR | MB_ABORTRETRYIGNORE | MB_DEFBUTTON3);
             
             switch (result)
             {
@@ -156,9 +148,9 @@ namespace ErrorLogger
         }
         else if (location == PopupLocation::Remote)
         {
-            strncpy_s(srvrMsgBuf.caption, caption.c_str(), captionBufSz);
-            strncpy_s(srvrMsgBuf.errMsg, errMsg.c_str(), errMsgBufSz);
-            strncpy_s(srvrMsgBuf.instructions, instructions.c_str(), instructionsBufSz);
+            caption.copy(srvrMsgBuf.caption.data(), caption.size()+1, 0);
+            errMsg.copy(srvrMsgBuf.errMsg.data(), errMsg.size()+1, 0);
+            instructions.copy(srvrMsgBuf.instructions.data(), instructions.size()+1, 0);
 
             // send msgBuf to server app using UMP
             // wait for response from server app
@@ -180,20 +172,19 @@ namespace ErrorLogger
         }
     }
 
-    void LogError(const std::string& errMsg, const std::string& caption, const std::source_location& loc)
+    void LogError(std::string_view errMsg, std::string_view caption, const std::source_location loc)
     {
         if (!(enableLogging || enablePopups))
             return;
 
-        const std::string& locStr = std::string(loc.file_name()) + ":|" + std::to_string(loc.line()) +
-                                    "| " + loc.function_name();
+        const std::string locStr = std::format("{}:|{}| {}: ", loc.file_name(), loc.line(), loc.function_name());
 
         std::ostringstream oss;
-        oss << locStr << ": " << caption << ": " << errMsg << std::endl;
+        oss << locStr << caption << ": " << errMsg << std::endl;
 
         PopupError(oss.str(), caption);
 
-        if (!enableLogging || MsgLogged(locStr))
+        if (!enableLogging || (enableUniqueMsgs && MsgLogged(locStr)))
         {
             return;
         }
@@ -256,7 +247,7 @@ namespace ErrorLogger
                 enableLogging = false;
             }
 
-            ErrMsgs.push_back(locStr);
+            errMsgs.push_back(locStr);
             numErrMsgs++;
         }
         else if (numErrMsgs == maxErrMsgs)
