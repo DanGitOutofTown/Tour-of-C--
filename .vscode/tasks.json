@@ -10,6 +10,8 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "${fileDirname}\\*.cpp",
+                "-lwsock32",
+                "-lws2_32",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "-DRELEASE_ASSERT",

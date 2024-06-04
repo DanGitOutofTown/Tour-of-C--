@@ -7,8 +7,11 @@
 #include <mutex>
 #include <chrono>
 #include <ctime>
+#include <thread>
 
-#include "windows.h"
+#include <winsock2.h>
+#include <windows.h>
+#include <stdio.h>
 
 #include "LogError.h"
 #include "ClientToSrvrMsgBuf.h"
@@ -29,20 +32,15 @@ namespace ErrorLogger
             Local,
             Remote
         };
-        PopupLocation location = PopupLocation::Local;
+        PopupLocation location = PopupLocation::Remote;
 
         int maxErrMsgs{10};
         int maxPopups{5}; // must be <= maxErrMsgs
-        int srvrPort{0};
-        int clientPort{0};
 
-        std::string srvrSktName;
-    
         //***** End default configuration *****//
 
         // passed into Init()
         std::filesystem::path errFile;
-        std::string clientSktName;
 
         std::vector<std::string> errMsgs;
         int numErrMsgs{0};
@@ -51,10 +49,12 @@ namespace ErrorLogger
         std::mutex logLock;
         std::mutex popupLock;
 
-        ClientToSrvrMsgBuf srvrMsgBuf;
-        SrvrResponse srvrResp;
-        int srvrSkt{0};
+        SOCKET srvrSkt{};
+        SOCKET srvrRunningSkt{};
+        SOCKADDR_IN srvrAddr{};
+        SOCKADDR_IN srvrRunningAddr{};
 
+        bool srvrIsRunning{false};
         bool logErrorFirstPass{true};
 
         void ParseConfig(const std::filesystem::path& iniFile)
@@ -64,6 +64,27 @@ namespace ErrorLogger
                 ; // parse and override defaults
             }
        }
+    }
+
+    void SrvrRunning()
+    {
+        int dummy;
+        int srvrRunningAddrSize = sizeof(srvrRunningAddr);
+        while (true)
+        {
+            sendto(srvrRunningSkt, (char *)&dummy, sizeof(int), 0,
+                   (SOCKADDR *)&srvrRunningAddr, sizeof(srvrRunningAddr));
+
+            int len = 0;
+            struct pollfd pfd{.fd = srvrRunningSkt, .events = POLLIN};
+            if (WSAPoll(&pfd, 1UL, 1000) > 0)
+            {
+                len = recvfrom(srvrRunningSkt, (char *)&dummy, sizeof(int), 0,
+                               (SOCKADDR *)&srvrRunningAddr, &srvrRunningAddrSize);
+            }
+
+            srvrIsRunning = len > 0;
+        }
     }
 
     inline bool MsgLogged(std::string_view msg)
@@ -90,18 +111,43 @@ namespace ErrorLogger
 
         if (location == PopupLocation::Remote)
         {
-            if (!srvrSktName.empty() && srvrPort > 0 && clientPort > 0)
-            {
-                // assign srvrSkt by opening socket to server
-                // preset clientPort
+            WSADATA wsaData;
 
-                clientSktName.copy(srvrMsgBuf.clientSktName.data(), clientSktName.size()+1, 0);
+            // Initialize Winsock version 2.2
+            if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+            {
+                enablePopups = false;
+                printf("Client: WSAStartup failed with error: %ld\n", WSAGetLastError());
+
+                WSACleanup();
             }
             else
             {
-                enablePopups = false;
-                LogError("Communication with remote Popup Server not setup correctly, popups disabled.");
+                printf("Client: The Winsock DLL status is: %s.\n", wsaData.szSystemStatus);
             }
+
+            srvrSkt = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+            srvrRunningSkt = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+            if (srvrSkt == INVALID_SOCKET || srvrRunningSkt == INVALID_SOCKET)
+            {
+
+                enablePopups = false;
+                printf("Client: Error at socket(): %ld\n", WSAGetLastError());
+
+                WSACleanup();
+            }
+
+            srvrAddr.sin_family = AF_INET;
+            srvrAddr.sin_port = htons(srvrPort);
+            srvrAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+            srvrRunningAddr.sin_family = AF_INET;
+            srvrRunningAddr.sin_port = htons(srvrRunningPort);
+            srvrRunningAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+            
+            std::thread srvrRunning(SrvrRunning);
+            srvrRunning.detach();
         }
     }
 
@@ -130,42 +176,49 @@ namespace ErrorLogger
         {
             auto result = MessageBoxA(NULL, (std::string(errMsg) + instructions).data(),
                                       caption.data(), MB_ICONERROR | MB_ABORTRETRYIGNORE | MB_DEFBUTTON3);
-            
+
             switch (result)
             {
-                case IDABORT:
-                    std::terminate();
-                case IDRETRY:
-                    enablePopups = false;
-                    break;
-                case IDIGNORE:
-                    break;
-                default:
-                    break;
+            case IDABORT:
+                std::terminate();
+            case IDRETRY:
+                enablePopups = false;
+                break;
+            case IDIGNORE:
+            default:
+                break;
             }
-            
+
             numPopups++;
         }
-        else if (location == PopupLocation::Remote)
+        else if (location == PopupLocation::Remote && srvrIsRunning)
         {
-            caption.copy(srvrMsgBuf.caption.data(), caption.size()+1, 0);
-            errMsg.copy(srvrMsgBuf.errMsg.data(), errMsg.size()+1, 0);
-            instructions.copy(srvrMsgBuf.instructions.data(), instructions.size()+1, 0);
+            ClientToSrvrMsgBuf clientMsgBuf;
+            caption.copy(clientMsgBuf.caption.data(), caption.size() + 1, 0);
+            errMsg.copy(clientMsgBuf.errMsg.data(), errMsg.size()+1, 0);
+            instructions.copy(clientMsgBuf.instructions.data(), instructions.size()+1, 0);
 
-            // send msgBuf to server app using UMP
-            // wait for response from server app
-            
-            switch (srvrResp)
+            sendto(srvrSkt, (char *)&clientMsgBuf, sizeof(clientMsgBuf), 0,
+                   (SOCKADDR *)&srvrAddr, sizeof(srvrAddr));
+
+            SrvrResponse srvrResp;
+            int srvrAddrSize = sizeof(srvrAddr);
+            int len = recvfrom(srvrSkt, (char *)&srvrResp, sizeof(srvrResp), 0,
+                               (SOCKADDR *)&srvrAddr, &srvrAddrSize);
+
+            if (len > 0)
             {
-                case SrvrResponse::Ignore:
-                    break;
+                switch (srvrResp)
+                {
                 case SrvrResponse::DisablePopups:
                     enablePopups = false;
                     break;
                 case SrvrResponse::TerminateProcess:
                     std::terminate();
+                case SrvrResponse::Ignore:
                 default:
                     break;
+                }
             }
             
             numPopups++;
